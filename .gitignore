@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment and secrets (use .env.example as template)
+.env
+.env.local
+.env.*.local
+
+# Firebase service account (private keys – never commit)
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
+# User uploads (avatars)
+uploads/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS and editor
+.DS_Store
+.idea
+*.suo
+*.sw?
