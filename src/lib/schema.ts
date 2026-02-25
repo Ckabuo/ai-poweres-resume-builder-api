@@ -169,6 +169,18 @@ export async function initSchema() {
     // Column already exists
   }
 
+  // Migration: add desired_job_title and custom_sections
+  try {
+    await db.execute('ALTER TABLE users ADD COLUMN desired_job_title VARCHAR(255) DEFAULT NULL AFTER name');
+  } catch {
+    /* already exists */
+  }
+  try {
+    await db.execute('ALTER TABLE users ADD COLUMN custom_sections LONGTEXT DEFAULT NULL AFTER skills');
+  } catch {
+    /* already exists */
+  }
+
   // Seed default admin: set is_admin=1 for the email in SEED_ADMIN_EMAIL (user must already exist)
   const seedEmail = process.env.SEED_ADMIN_EMAIL?.trim();
   if (seedEmail) {

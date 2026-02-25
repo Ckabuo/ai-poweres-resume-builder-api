@@ -53,14 +53,18 @@ generateRoutes.post('/resume', optionalAuthMiddleware, async (req, res, next) =>
         education?: Array<{ institution: string; degree: string; dates: string; grade?: string }>;
         experience?: Array<{ role: string; company: string; location: string; dates: string; achievements: string[] }>;
         skills?: string[];
+        customSections?: Array<{ title: string; content: string }>;
       };
+      const customSectionsText = Array.isArray(p.customSections) && p.customSections.length > 0
+        ? `\nCustom sections (include these in the resume): ${JSON.stringify(p.customSections)}`
+        : '';
       const profileText = `PROFILE DATA:
 Name: ${p.name || 'Not provided'}
 Contact: ${JSON.stringify(p.contact || {})}
 Career Objective: ${p.careerObjective || 'Not provided'}
 Education: ${JSON.stringify(p.education || [])}
 Experience: ${JSON.stringify(p.experience || [])}
-Skills: ${Array.isArray(p.skills) ? p.skills.join(', ') : 'Not provided'}`;
+Skills: ${Array.isArray(p.skills) ? p.skills.join(', ') : 'Not provided'}${customSectionsText}`;
 
       userContent = jobDescription
         ? `Create a professional resume and cover letter FROM SCRATCH using the profile data below. Tailor them for the job description. Use a ${tone} tone.
@@ -74,14 +78,15 @@ TONE: ${tone}
 
 IMPORTANT: Respond with TWO SEPARATE JSON objects, one after the other:
 
-FIRST JSON (Resume) - Use this exact template structure, populate from profile:
+FIRST JSON (Resume) - Populate from profile. Include ONLY sections that have content: omit any section that is empty or not provided in the profile (e.g. if no certifications, omit "certifications" or use []; if no education, omit "education" or use []). Do not add placeholder or fake content for missing data. Structure when present: header (required), summary, skills (personalStrengths, technicalSkills), experience, education, certifications, customSections (only if profile has custom sections).
 {"resume": {
   "header": {"name": "...", "title": "...", "contact": {...}},
-  "summary": "Professional summary paragraph",
+  "summary": "...",
   "skills": {"personalStrengths": [...], "technicalSkills": [...]},
   "experience": [...],
   "education": [...],
-  "certifications": []
+  "certifications": [],
+  "customSections": []
 }}
 
 SECOND JSON (Cover Letter):
@@ -96,14 +101,15 @@ TONE: ${tone}
 
 IMPORTANT: Respond with TWO SEPARATE JSON objects, one after the other:
 
-FIRST JSON (Resume) - Use this exact template structure, populate from profile:
+FIRST JSON (Resume) - Populate from profile. Include ONLY sections that have content: omit or leave empty any section not in the profile (e.g. no certifications → omit or empty array; no education → omit or empty array). Do not add placeholder or fake content. Structure when present: header (required), summary, skills, experience, education, certifications, customSections (only if profile has them).
 {"resume": {
   "header": {"name": "...", "title": "...", "contact": {"address": "", "email": "", "mobile": "", "linkedin": "", "github": ""}},
-  "summary": "Professional summary paragraph",
+  "summary": "...",
   "skills": {"personalStrengths": [...], "technicalSkills": [...]},
-  "experience": [{"role": "...", "company": "...", "location": "...", "dates": "...", "achievements": [...]}],
-  "education": [{"institution": "...", "dates": "...", "degree": "...", "grade": ""}],
-  "certifications": []
+  "experience": [...],
+  "education": [...],
+  "certifications": [],
+  "customSections": []
 }}
 
 SECOND JSON (Cover Letter):
@@ -123,48 +129,14 @@ TONE: ${tone}
 
 IMPORTANT: Please respond with TWO SEPARATE JSON objects, one after the other:
 
-FIRST JSON (Resume) - Use this exact template structure and modify as needed:
+FIRST JSON (Resume) - Tailor the resume from the original. Include ONLY sections that have content: omit or leave empty any section that is empty or not in the original (e.g. no certifications in original → omit or empty array). Do not add placeholder or fake content for missing sections. Keep the same structure keys (header, summary, skills, experience, education, certifications) but omit sections that have no content.
 {"resume": {
-  "header": {
-    "name": "Full Name",
-    "title": "Job Title",
-    "contact": {
-      "address": "Location",
-      "email": "email@example.com",
-      "mobile": "Phone",
-      "linkedin": "LinkedIn",
-      "github": "GitHub"
-    }
-  },
-  "summary": "Professional summary paragraph",
-  "skills": {
-    "personalStrengths": ["Skill 1", "Skill 2"],
-    "technicalSkills": ["Skill 1", "Skill 2"]
-  },
-  "experience": [
-    {
-      "role": "Job Title",
-      "company": "Company Name",
-      "location": "Location",
-      "dates": "Start - End",
-      "achievements": ["Achievement 1", "Achievement 2"]
-    }
-  ],
-  "education": [
-    {
-      "institution": "Institution Name",
-      "dates": "Start - End",
-      "degree": "Degree and Major",
-      "grade": "Grade (if applicable)"
-    }
-  ],
-  "certifications": [
-    {
-      "name": "Certification Name",
-      "provider": "Provider",
-      "date": "Date"
-    }
-  ]
+  "header": {...},
+  "summary": "...",
+  "skills": {"personalStrengths": [...], "technicalSkills": [...]},
+  "experience": [...],
+  "education": [...],
+  "certifications": []
 }}
 
 SECOND JSON (Cover Letter):
@@ -211,6 +183,10 @@ Respond with properly formatted JSON only.`;
       const resumeParsed = JSON.parse(resumeJsonStr);
 
       if (resumeParsed.resume) {
+        const resumeObj = typeof resumeParsed.resume === 'string' ? null : resumeParsed.resume;
+        if (resumeObj && isBuilder && Array.isArray((profileData as { customSections?: unknown[] })?.customSections) && (profileData as { customSections: unknown[] }).customSections.length > 0) {
+          resumeObj.customSections = (profileData as { customSections: Array<{ title: string; content: string }> }).customSections;
+        }
         resume =
           typeof resumeParsed.resume === 'string'
             ? resumeParsed.resume.trim()
@@ -225,6 +201,10 @@ Respond with properly formatted JSON only.`;
       }
     } else {
       const parsed = JSON.parse(content);
+      const resumeObj = typeof parsed.resume === 'string' ? null : parsed.resume;
+      if (resumeObj && isBuilder && Array.isArray((profileData as { customSections?: unknown[] })?.customSections) && (profileData as { customSections: unknown[] }).customSections.length > 0) {
+        resumeObj.customSections = (profileData as { customSections: Array<{ title: string; content: string }> }).customSections;
+      }
       resume =
         typeof parsed.resume === 'string'
           ? parsed.resume
