@@ -69,6 +69,8 @@ Skills: ${Array.isArray(p.skills) ? p.skills.join(', ') : 'Not provided'}${custo
       userContent = jobDescription
         ? `Create a professional resume and cover letter FROM SCRATCH using the profile data below. Tailor them for the job description. Use a ${tone} tone.
 
+STRICT: Use ONLY the data provided in the profile. Do not add any schools, institutions, degrees, employers, or roles that are not listed in the profile. Education and experience entries must come exclusively from the profile data—no invented or inferred entries.
+
 ${profileText}
 
 JOB DESCRIPTION:
@@ -78,7 +80,7 @@ TONE: ${tone}
 
 IMPORTANT: Respond with TWO SEPARATE JSON objects, one after the other:
 
-FIRST JSON (Resume) - Populate from profile. Include ONLY sections that have content: omit any section that is empty or not provided in the profile (e.g. if no certifications, omit "certifications" or use []; if no education, omit "education" or use []). Do not add placeholder or fake content for missing data. Structure when present: header (required), summary, skills (personalStrengths, technicalSkills), experience, education, certifications, customSections (only if profile has custom sections).
+FIRST JSON (Resume) - Populate ONLY from the profile data above. Include ONLY sections that have content in the profile. For education and experience, list ONLY the entries provided—do not add any new institutions or employers. Omit or use [] for empty sections. Do not add placeholder or fake content. Structure when present: header (required), summary, skills (personalStrengths, technicalSkills), experience, education, certifications, customSections (only if profile has custom sections).
 {"resume": {
   "header": {"name": "...", "title": "...", "contact": {...}},
   "summary": "...",
@@ -95,13 +97,15 @@ SECOND JSON (Cover Letter):
 Respond with properly formatted JSON only.`
         : `Create a professional resume FROM SCRATCH using the profile data below. No job description - create a general professional resume. Use a ${tone} tone. Cover letter can be a generic template.
 
+STRICT: Use ONLY the data provided in the profile. Do not add any schools, institutions, degrees, employers, or roles that are not listed in the profile.
+
 ${profileText}
 
 TONE: ${tone}
 
 IMPORTANT: Respond with TWO SEPARATE JSON objects, one after the other:
 
-FIRST JSON (Resume) - Populate from profile. Include ONLY sections that have content: omit or leave empty any section not in the profile (e.g. no certifications → omit or empty array; no education → omit or empty array). Do not add placeholder or fake content. Structure when present: header (required), summary, skills, experience, education, certifications, customSections (only if profile has them).
+FIRST JSON (Resume) - Populate ONLY from the profile data above. For education and experience, list ONLY the entries provided—do not add any new institutions or employers. Omit or leave empty any section not in the profile. Do not add placeholder or fake content. Structure when present: header (required), summary, skills, experience, education, certifications, customSections (only if profile has them).
 {"resume": {
   "header": {"name": "...", "title": "...", "contact": {"address": "", "email": "", "mobile": "", "linkedin": "", "github": ""}},
   "summary": "...",
@@ -119,7 +123,13 @@ Respond with properly formatted JSON only.`;
     } else {
       userContent = `Please tailor this resume for the job description below, and create a matching cover letter.
 
-ORIGINAL RESUME:
+STRICT RULES — YOU MUST FOLLOW:
+- Use ONLY information that appears in the ORIGINAL RESUME below. Do not add any schools, universities, colleges, degrees, certifications, employers, or roles that are not explicitly mentioned in the original.
+- For education: list ONLY the institutions and degrees that appear in the original resume. Do not infer, assume, or invent any education entries.
+- For experience: list ONLY the companies, roles, and details from the original. Do not add jobs or employers not in the resume.
+- You may rephrase and tailor wording for the job description, but the factual content (names of schools, employers, dates, etc.) must come exclusively from the original.
+
+ORIGINAL RESUME (this is the only source of facts):
 ${resumeText}
 
 JOB DESCRIPTION:
@@ -129,7 +139,7 @@ TONE: ${tone}
 
 IMPORTANT: Please respond with TWO SEPARATE JSON objects, one after the other:
 
-FIRST JSON (Resume) - Tailor the resume from the original. Include ONLY sections that have content: omit or leave empty any section that is empty or not in the original (e.g. no certifications in original → omit or empty array). Do not add placeholder or fake content for missing sections. Keep the same structure keys (header, summary, skills, experience, education, certifications) but omit sections that have no content.
+FIRST JSON (Resume) - Tailor the resume from the original. Include ONLY sections that have content in the original. For education and experience, include ONLY entries that appear in the ORIGINAL RESUME above—do not add any new institutions or employers. Omit or use empty arrays for sections with no content in the original. Do not add placeholder or fake content.
 {"resume": {
   "header": {...},
   "summary": "...",
@@ -150,11 +160,11 @@ Respond with properly formatted JSON only.`;
       messages: [
         {
           role: 'system',
-          content: `You are an expert resume and cover letter writer. Use a ${tone} tone throughout. Respond with JSON containing "resume" and "coverLetter" fields.`,
+          content: `You are an expert resume and cover letter writer. Use a ${tone} tone throughout. Respond with JSON containing "resume" and "coverLetter" fields. CRITICAL: Only include factual content (schools, employers, degrees, roles, dates) that appears in the user's provided resume or profile—never invent or add institutions, companies, or education entries that are not in the source.`,
         },
         { role: 'user', content: userContent },
       ],
-      temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.7'),
+      temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.5'),
       max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS || '4000', 10),
     });
 

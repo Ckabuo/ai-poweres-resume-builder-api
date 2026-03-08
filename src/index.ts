@@ -13,6 +13,7 @@ import { atsRoutes } from './routes/ats.js';
 import { feedbackRoutes } from './routes/feedback.js';
 import { exportRoutes } from './routes/export.js';
 import { adminRoutes } from './routes/admin.js';
+import { jobMatchRoutes } from './routes/jobMatch.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -43,6 +44,7 @@ app.use('/api/ats', atsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/exports', exportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/job-match', jobMatchRoutes);
 
 // Error handling
 app.use(errorHandler);

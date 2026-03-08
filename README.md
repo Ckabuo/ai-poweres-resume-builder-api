@@ -33,6 +33,7 @@ cp .env.example .env
 
 **Optional:**
 
+- **Job Match (AI-suggested jobs):** `RAPIDAPI_KEY` – from [RapidAPI Active Jobs DB](https://rapidapi.com/fantastic-jobs-fantastic-jobs-default/api/active-jobs-db). If not set, Job Match returns a friendly error.
 - **Password reset:** `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
 - **Encryption at rest:** `ENCRYPTION_KEY` (32-byte hex) – for AES-256-GCM
   - Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
@@ -67,6 +68,7 @@ Server runs on `http://localhost:3001`.
 | GET | `/api/resumes` | Yes | List user's resumes |
 | POST | `/api/resumes` | Yes | Save resume |
 | GET | `/api/resumes/:id` | Yes | Get resume |
+| POST | `/api/job-match` | Yes | AI-suggested jobs from saved resume (RapidAPI Active Jobs DB) |
 | GET | `/api/admin/users` | Admin | List users |
 | PUT | `/api/admin/users/:id` | Admin | Update user (enable/disable) |
 
