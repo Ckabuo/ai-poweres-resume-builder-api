@@ -148,7 +148,7 @@ async function extractSearchParams(resumeContext: string): Promise<{ keyword: st
  * Query params: title_filter, location_filter, limit, offset, description_type
  */
 async function fetchJobsFromApi(keyword: string, location?: string): Promise<JobListing[]> {
-  const apiKey = process.env.RAPIDAPI_KEY;
+  const apiKey = process.env.RAPIDAPI_KEY?.trim();
   if (!apiKey) {
     throw new Error('RAPIDAPI_KEY is not configured. Add it in backend .env to enable Job Match.');
   }
@@ -240,7 +240,15 @@ jobMatchRoutes.post('/', authMiddleware, async (req, res, next) => {
       return;
     }
     if (err.message?.includes('Jobs API error')) {
-      res.status(502).json({ error: 'Jobs API temporarily unavailable. Check RAPIDAPI_KEY and quota.' });
+      const statusMatch = err.message.match(/Jobs API error:\s*(\d+)/);
+      const httpStatus = statusMatch?.[1] ?? 'unknown';
+      const hints: Record<string, string> = {
+        '401': 'RapidAPI rejected the key—use the Application key from RapidAPI in backend .env and restart the server.',
+        '403': 'Forbidden—subscribe to “Active Jobs DB” on RapidAPI for this key, then retry.',
+        '429': 'Rate limit or quota exceeded for this RapidAPI app—wait, reduce calls, or upgrade.',
+      };
+      const hint = hints[httpStatus] ?? 'Check RAPIDAPI_KEY in backend/.env (not .env.redacted), restart the API server, and verify quota.';
+      res.status(502).json({ error: `Jobs API error (${httpStatus}). ${hint}` });
       return;
     }
     next(error);
